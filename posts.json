@@ -1,8 +1,38 @@
 [
   {
-    "title": "Test post",
-    "date": "2025-11-20",
-    "slug": "test-post",
-    "description": "Test"
+    "title": "When AI Models Get Gaslit: How LLMs Respond to False Feedback About Their Own Reasoning",
+    "date": "2025-07-16",
+    "slug": "when-ai-models-get-gaslit",
+    "description": "How does an AI model respond when it is misled into believing it made an error? In 39% of cases, it goes with it!"
+  },
+  {
+    "title": "Mapping Intent: Visualizing AI Policy Adherence with Knowledge Graphs",
+    "date": "2025-02-13",
+    "slug": "mapping-intent-visualizing-ai-policy-adherence",
+    "description": "An AI safety project by Mia Hopman and Jack Wittmayer."
+  },
+  {
+    "title": "Does weak-to-strong generalization generalize?",
+    "date": "2025-02-02",
+    "slug": "does-weak-to-strong-generalization-generalize",
+    "description": "This post is a summary of a small project I completed for the AI Safety Fundamentals online course hosted by BlueDot Impact in October\u2026"
+  },
+  {
+    "title": "Multimodal AI: The Story of LLaVA, Mixture of Experts, and MoE-LLaVA",
+    "date": "2024-11-19",
+    "slug": "multimodal-ai-llava-mixture-of-experts",
+    "description": "Multimodal AI models have a bright future in the era of large-scale compute. Many of the most well-known LLMs, such as GPT-4, Gemini, and\u2026"
+  },
+  {
+    "title": "Things I wish I had known before reimplementing a Transformer from scratch",
+    "date": "2024-08-28",
+    "slug": "things-i-wish-i-had-known-reimplementing-transformer",
+    "description": "If you are like me, you want to gain a deep understanding of what is happening behind the scenes of today\u2019s most impressive AI models like\u2026"
+  },
+  {
+    "title": "5 Important Papers for a Beginner to Understand Today\u2019s NLP",
+    "date": "2024-03-09",
+    "slug": "5-important-papers-for-beginners-nlp",
+    "description": "Natural language processing (NLP) is progressing extremely quickly nowadays and it can be difficult to know which research papers to start\u2026"
   }
 ]

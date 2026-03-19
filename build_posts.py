@@ -10,6 +10,12 @@ import markdown
 from pathlib import Path
 from datetime import datetime
 
+def format_date(date_str):
+    try:
+        return datetime.strptime(date_str, '%Y-%m-%d').strftime('%B %-d, %Y')
+    except ValueError:
+        return date_str
+
 def parse_frontmatter(content):
     """Parse YAML frontmatter from markdown file."""
     if not content.startswith('---'):
@@ -64,7 +70,7 @@ def generate_html_file(title, date, body_html, slug):
         <main>
             <article class="blog-post">
                 <h1>{title}</h1>
-                <p class="post-date">{date}</p>
+                <p class="post-date">{format_date(date)}</p>
 
                 {body_html}
             </article>
@@ -99,6 +105,20 @@ def generate_all_posts_html(posts_list):
                 {chr(10).join(items)}
             </ul>"""
 
+def update_index_html(posts_list):
+    index_file = Path('index.html')
+    content = index_file.read_text(encoding='utf-8')
+
+    items = '\n'.join(
+        f'                <li>\n                    <a href="/posts/{p["slug"]}.html">{p["title"]}</a>\n                    <span class="post-date">{format_date(p["date"])}</span>\n                </li>'
+        for p in posts_list
+    )
+    new_ul = f'<ul class="posts-list">\n{items}\n            </ul>'
+
+    updated = re.sub(r'<ul class="posts-list">.*?</ul>', new_ul, content, flags=re.DOTALL)
+    index_file.write_text(updated, encoding='utf-8')
+    print('✓ Updated index.html')
+
 def generate_posts_json(posts_list):
     """Generate a JSON file with posts metadata."""
     import json
@@ -110,6 +130,41 @@ def generate_posts_json(posts_list):
         f.write(posts_json)
 
     print('✓ Generated posts.json with posts metadata')
+
+def build_about():
+    about_md = Path('about.md')
+    if not about_md.exists():
+        return
+    body_html = markdown.markdown(about_md.read_text(encoding='utf-8'))
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Jack Wittmayer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <h1><a href="/">Jack Wittmayer</a></h1>
+            <ul>
+                <li><a href="/about.html">About</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            {body_html}
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Jack Wittmayer</p>
+        </footer>
+    </div>
+</body>
+</html>"""
+    Path('about.html').write_text(html, encoding='utf-8')
+    print('✓ Built about.md -> about.html')
 
 def build_posts():
     """Build all posts from markdown to HTML."""
@@ -158,12 +213,13 @@ def build_posts():
             'description': description
         })
 
-    # Generate posts.json for dynamic loading
     if posts_list:
         generate_posts_json(posts_list)
+        update_index_html(posts_list)
 
     print(f'\n✓ Successfully built {len(posts_list)} posts!')
     return posts_list
 
 if __name__ == '__main__':
+    build_about()
     build_posts()

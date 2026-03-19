@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor - Jack Wittmayer</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <h1><a href="/">Jack Wittmayer</a></h1>
+            <ul>
+                <li><a href="/about.html">About</a></li>
+                <li><a href="/editor.html">Editor</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <div id="login-section" class="login-form">
+                <h2>Login</h2>
+                <form id="login-form">
+                    <input type="email" id="login-email" placeholder="Email" required>
+                    <input type="password" id="login-password" placeholder="Password" required>
+                    <button type="submit">Login</button>
+                    <p id="login-error" style="color: red; display: none;"></p>
+                </form>
+            </div>
+
+            <div id="editor-section" class="editor-container" style="display: none;">
+                <div class="editor-controls" style="margin-bottom: 1.5rem;">
+                    <button id="tab-posts" class="tab-active" onclick="showTab('posts')">Posts</button>
+                    <button id="tab-about" onclick="showTab('about')">About</button>
+                    <span style="flex:1"></span>
+                    <button id="logout-btn">Logout</button>
+                </div>
+
+                <div id="about-editor" style="display: none;">
+                    <h2>Edit About Page</h2>
+                    <label for="about-content">Content (Markdown)</label>
+                    <textarea id="about-content" rows="16" placeholder="Write about page in markdown..."></textarea>
+                    <div class="editor-buttons">
+                        <button type="button" onclick="saveAbout()">Save</button>
+                        <button type="button" onclick="document.getElementById('about-image-input').click()">Upload Image</button>
+                        <input type="file" id="about-image-input" accept="image/*" style="display:none" onchange="uploadImage(this, 'about-content')">
+                    </div>
+                    <h3>Preview</h3>
+                    <div id="about-preview" class="preview"></div>
+                </div>
+
+                <div id="posts-editor">
+                <h2>Post Editor</h2>
+                <div class="editor-controls">
+                    <select id="post-select">
+                        <option value="new">-- New Post --</option>
+                    </select>
+                </div>
+
+                <form id="post-form">
+                    <label for="post-title">Title</label>
+                    <input type="text" id="post-title" placeholder="Post title" required>
+
+                    <label for="post-slug">Slug</label>
+                    <input type="text" id="post-slug" placeholder="post-slug" required>
+
+                    <label for="post-date">Date</label>
+                    <input type="date" id="post-date" required>
+
+                    <label for="post-description">Description</label>
+                    <input type="text" id="post-description" placeholder="Brief description">
+
+                    <label for="post-content">Content (Markdown)</label>
+                    <textarea id="post-content" rows="16" placeholder="Write your post in markdown..."></textarea>
+
+                    <div class="editor-buttons">
+                        <button type="submit">Save</button>
+                        <button type="button" id="delete-btn" style="display: none;">Delete</button>
+                        <button type="button" onclick="document.getElementById('post-image-input').click()">Upload Image</button>
+                        <input type="file" id="post-image-input" accept="image/*" style="display:none" onchange="uploadImage(this, 'post-content')">
+                    </div>
+                </form>
+
+                <h3>Preview</h3>
+                <div id="preview" class="preview"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Jack Wittmayer</p>
+        </footer>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://afwlsgncrzxzskbevpso.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_uItF9k3YhRXoZBziWHqUFQ_653pM2hs';
+
+        let currentPostId = null;
+
+        function showTab(tab) {
+            document.getElementById('posts-editor').style.display = tab === 'posts' ? 'block' : 'none';
+            document.getElementById('about-editor').style.display = tab === 'about' ? 'block' : 'none';
+            document.getElementById('tab-posts').className = tab === 'posts' ? 'tab-active' : '';
+            document.getElementById('tab-about').className = tab === 'about' ? 'tab-active' : '';
+            if (tab === 'about') loadAboutContent();
+        }
+
+        async function loadAboutContent() {
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/site_content?key=eq.about&select=content`,
+                { headers: authHeaders() }
+            );
+            const data = await res.json();
+            if (data.length > 0) {
+                document.getElementById('about-content').value = data[0].content;
+                document.getElementById('about-preview').innerHTML = marked.parse(data[0].content);
+            }
+        }
+
+        async function saveAbout() {
+            const content = document.getElementById('about-content').value;
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/site_content?key=eq.about`, {
+                method: 'PATCH',
+                headers: { ...authHeaders(), 'Prefer': 'return=representation' },
+                body: JSON.stringify({ content, updated_at: new Date().toISOString() })
+            });
+            if (res.ok) {
+                alert('About page saved!');
+                document.getElementById('about-preview').innerHTML = marked.parse(content);
+            } else {
+                const err = await res.json();
+                alert('Save failed: ' + (err.message || JSON.stringify(err)));
+            }
+        }
+
+        async function uploadImage(input, textareaId) {
+            const file = input.files[0];
+            if (!file) return;
+            const ext = file.name.split('.').pop();
+            const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+            const res = await fetch(`${SUPABASE_URL}/storage/v1/object/images/${name}`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${getToken()}`,
+                    'Content-Type': file.type
+                },
+                body: file
+            });
+            if (!res.ok) {
+                alert('Upload failed');
+                input.value = '';
+                return;
+            }
+            const url = `${SUPABASE_URL}/storage/v1/object/public/images/${name}`;
+            const width = prompt('Image width in pixels (leave empty for full width):', '500');
+            const textarea = document.getElementById(textareaId);
+            const pos = textarea.selectionStart;
+            const text = textarea.value;
+            const widthAttr = width ? ` width="${width}"` : '';
+            const imgMarkdown = `<img src="${url}" alt="${file.name}"${widthAttr}>`;
+            textarea.value = text.slice(0, pos) + imgMarkdown + text.slice(pos);
+            textarea.dispatchEvent(new Event('input'));
+            input.value = '';
+        }
+
+        function getToken() {
+            return sessionStorage.getItem('supabase_token');
+        }
+
+        function authHeaders() {
+            return {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${getToken()}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        function slugify(text) {
+            return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        }
+
+        function showEditor() {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('editor-section').style.display = 'block';
+            loadPostList();
+        }
+
+        function showLogin() {
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('editor-section').style.display = 'none';
+            sessionStorage.removeItem('supabase_token');
+        }
+
+        async function login(email, password) {
+            const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error_description || data.msg || 'Login failed');
+            sessionStorage.setItem('supabase_token', data.access_token);
+            return data;
+        }
+
+        async function loadPostList() {
+            const select = document.getElementById('post-select');
+            select.innerHTML = '<option value="new">-- New Post --</option>';
+            try {
+                const res = await fetch(
+                    `${SUPABASE_URL}/rest/v1/posts?select=id,title,slug&order=date.desc`,
+                    { headers: authHeaders() }
+                );
+                const posts = await res.json();
+                posts.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.title;
+                    select.appendChild(opt);
+                });
+            } catch (e) {}
+        }
+
+        async function loadPost(id) {
+            if (id === 'new') {
+                clearForm();
+                return;
+            }
+            try {
+                const res = await fetch(
+                    `${SUPABASE_URL}/rest/v1/posts?id=eq.${id}&select=*`,
+                    { headers: authHeaders() }
+                );
+                const posts = await res.json();
+                if (posts.length === 0) return;
+                const p = posts[0];
+                currentPostId = p.id;
+                document.getElementById('post-title').value = p.title;
+                document.getElementById('post-slug').value = p.slug;
+                document.getElementById('post-date').value = p.date;
+                document.getElementById('post-description').value = p.description || '';
+                document.getElementById('post-content').value = p.content || '';
+                document.getElementById('delete-btn').style.display = 'inline-block';
+                updatePreview();
+            } catch (e) {}
+        }
+
+        function clearForm() {
+            currentPostId = null;
+            document.getElementById('post-title').value = '';
+            document.getElementById('post-slug').value = '';
+            document.getElementById('post-date').value = new Date().toISOString().slice(0, 10);
+            document.getElementById('post-description').value = '';
+            document.getElementById('post-content').value = '';
+            document.getElementById('delete-btn').style.display = 'none';
+            document.getElementById('preview').innerHTML = '';
+        }
+
+        function updatePreview() {
+            const content = document.getElementById('post-content').value;
+            document.getElementById('preview').innerHTML = marked.parse(content);
+        }
+
+        async function savePost() {
+            const body = {
+                title: document.getElementById('post-title').value,
+                slug: document.getElementById('post-slug').value,
+                date: document.getElementById('post-date').value,
+                description: document.getElementById('post-description').value,
+                content: document.getElementById('post-content').value
+            };
+
+            let res;
+            if (currentPostId) {
+                res = await fetch(`${SUPABASE_URL}/rest/v1/posts?id=eq.${currentPostId}`, {
+                    method: 'PATCH',
+                    headers: { ...authHeaders(), 'Prefer': 'return=representation' },
+                    body: JSON.stringify(body)
+                });
+            } else {
+                res = await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
+                    method: 'POST',
+                    headers: { ...authHeaders(), 'Prefer': 'return=representation' },
+                    body: JSON.stringify(body)
+                });
+            }
+
+            if (!res.ok) {
+                const err = await res.json();
+                alert('Save failed: ' + (err.message || JSON.stringify(err)));
+                return;
+            }
+
+            const result = await res.json();
+            if (Array.isArray(result) && result.length > 0) {
+                currentPostId = result[0].id;
+            }
+            alert('Post saved!');
+            loadPostList();
+        }
+
+        async function deletePost() {
+            if (!currentPostId || !confirm('Delete this post?')) return;
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/posts?id=eq.${currentPostId}`, {
+                method: 'DELETE',
+                headers: authHeaders()
+            });
+            if (res.ok) {
+                clearForm();
+                loadPostList();
+                alert('Post deleted.');
+            } else {
+                alert('Delete failed.');
+            }
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errorEl = document.getElementById('login-error');
+            errorEl.style.display = 'none';
+            try {
+                await login(
+                    document.getElementById('login-email').value,
+                    document.getElementById('login-password').value
+                );
+                showEditor();
+            } catch (err) {
+                errorEl.textContent = err.message;
+                errorEl.style.display = 'block';
+            }
+        });
+
+        document.getElementById('post-select').addEventListener('change', (e) => {
+            loadPost(e.target.value);
+        });
+
+        document.getElementById('post-title').addEventListener('input', (e) => {
+            if (!currentPostId) {
+                document.getElementById('post-slug').value = slugify(e.target.value);
+            }
+        });
+
+        document.getElementById('post-content').addEventListener('input', updatePreview);
+
+        document.getElementById('post-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            savePost();
+        });
+
+        document.getElementById('delete-btn').addEventListener('click', deletePost);
+        document.getElementById('logout-btn').addEventListener('click', showLogin);
+
+        document.getElementById('about-content').addEventListener('input', () => {
+            document.getElementById('about-preview').innerHTML = marked.parse(document.getElementById('about-content').value);
+        });
+
+        if (getToken()) {
+            showEditor();
+        }
+    </script>
+</body>
+</html>

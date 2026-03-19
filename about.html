@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About - Jack Wittmayer</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -15,26 +16,29 @@
             </ul>
         </nav>
 
-        <main>
-            <h2>About Me</h2>
-            <p>Hi, I'm Jack Wittmayer. I'm a software engineer based in [Your Location]. I'm passionate about building tools that solve real problems and exploring the intersection of AI, machine learning, and software engineering.</p>
-
-            <p>In my work, I focus on:</p>
-            <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
-                <li>Machine learning and AI applications</li>
-                <li>Full-stack software development</li>
-                <li>Building useful and practical tools</li>
-                <li>Learning and sharing knowledge</li>
-            </ul>
-
-            <p>When I'm not coding, you can find me [your hobbies/interests].</p>
-
-            <p>Feel free to reach out if you want to collaborate or just chat about technology!</p>
-        </main>
+        <main id="about-content"></main>
 
         <footer>
-            <p>© 2025 Jack Wittmayer</p>
+            <p>&copy; 2025 Jack Wittmayer</p>
         </footer>
     </div>
+
+    <script>
+        const SUPABASE_URL = 'https://afwlsgncrzxzskbevpso.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_uItF9k3YhRXoZBziWHqUFQ_653pM2hs';
+
+        async function loadAbout() {
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/site_content?key=eq.about&select=content`,
+                { headers: { 'apikey': SUPABASE_KEY } }
+            );
+            const data = await res.json();
+            if (data.length > 0) {
+                document.getElementById('about-content').innerHTML = marked.parse(data[0].content);
+            }
+        }
+
+        loadAbout();
+    </script>
 </body>
 </html>

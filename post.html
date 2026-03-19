@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jack Wittmayer</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -16,10 +17,9 @@
         </nav>
 
         <main>
-            <h2>Posts</h2>
-            <ul class="posts-list" id="posts-list">
-                <li>Loading posts...</li>
-            </ul>
+            <article class="blog-post" id="post-content">
+                <p>Loading...</p>
+            </article>
         </main>
 
         <footer>
@@ -36,27 +36,40 @@
             return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         }
 
-        async function loadPosts() {
-            const list = document.getElementById('posts-list');
+        async function loadPost() {
+            const slug = new URLSearchParams(window.location.search).get('slug');
+            const container = document.getElementById('post-content');
+
+            if (!slug) {
+                container.innerHTML = '<p>Post not found.</p>';
+                return;
+            }
+
             try {
                 const res = await fetch(
-                    `${SUPABASE_URL}/rest/v1/posts?select=title,slug,date,description&order=date.desc`,
+                    `${SUPABASE_URL}/rest/v1/posts?slug=eq.${encodeURIComponent(slug)}&select=*`,
                     { headers: { 'apikey': SUPABASE_KEY } }
                 );
                 const posts = await res.json();
-                list.innerHTML = posts.map(p => `
-                    <li>
-                        <a href="/post.html?slug=${encodeURIComponent(p.slug)}">${p.title}</a>
-                        <span class="post-date">${formatDate(p.date)}</span>
-                    </li>
-                `).join('');
-                if (posts.length === 0) list.innerHTML = '<li>No posts yet.</li>';
+
+                if (posts.length === 0) {
+                    container.innerHTML = '<p>Post not found.</p>';
+                    return;
+                }
+
+                const post = posts[0];
+                document.title = `${post.title} - Jack Wittmayer`;
+                container.innerHTML = `
+                    <h1>${post.title}</h1>
+                    <p class="post-date">${formatDate(post.date)}</p>
+                    <div>${marked.parse(post.content || '')}</div>
+                `;
             } catch (e) {
-                list.innerHTML = '<li>Failed to load posts.</li>';
+                container.innerHTML = '<p>Failed to load post.</p>';
             }
         }
 
-        loadPosts();
+        loadPost();
     </script>
 </body>
 </html>

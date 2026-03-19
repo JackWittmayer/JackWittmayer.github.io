@@ -1,0 +1,6 @@
+https://medium.com/@jtwittmayer/when-ai-models-get-gaslit-how-llms-respond-to-false-feedback-about-their-own-reasoning-2d2e399af3c0
+https://medium.com/@jtwittmayer/mapping-intent-visualizing-ai-policy-adherence-with-knowledge-graphs-0b80e5b2794c
+https://medium.com/@jtwittmayer/does-weak-to-strong-generalization-generalize-4780c8edd272
+https://medium.com/@jtwittmayer/multimodal-ai-the-story-of-llava-mixture-of-experts-and-moe-llava-a506a6ac1c6b
+https://medium.com/@jtwittmayer/things-i-wish-i-had-known-before-reimplementing-a-transformer-from-scratch-42d215f31141
+https://medium.com/@jtwittmayer/5-important-papers-for-a-beginner-to-understand-todays-nlp-bb1b2d21d88c
